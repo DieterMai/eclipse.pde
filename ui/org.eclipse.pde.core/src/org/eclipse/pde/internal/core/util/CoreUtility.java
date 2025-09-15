@@ -21,6 +21,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -34,7 +36,6 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Platform;
-import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.pde.internal.core.PDECore;
 
 public class CoreUtility {
@@ -125,26 +126,35 @@ public class CoreUtility {
 	 * @param monitor progress monitor for reporting and cancellation, can be <code>null</code>
 	 */
 	public static void deleteContent(File fileToDelete, IProgressMonitor monitor) {
-		// can be symlinks
-		if (!fileToDelete.exists()) {
-			fileToDelete.delete();
+		Path root = fileToDelete.toPath();
+		try {
+			Files.walkFileTree(root, new DeleteContentWalker(root, monitor));
+		} catch (IOException e) {
+			e.printStackTrace();
+			//
 		}
-		if (fileToDelete.exists()) {
-			SubMonitor subMon = SubMonitor.convert(monitor, 100);
 
-			if (fileToDelete.isDirectory()) {
-				File[] children = fileToDelete.listFiles();
-				if (children != null && children.length > 0) {
-					SubMonitor childMon = SubMonitor.convert(subMon.split(90), children.length);
-					for (File element : children) {
-						deleteContent(element, childMon.split(1));
-					}
-				}
-			}
-			fileToDelete.delete();
-
-			subMon.done();
-		}
+		// // can be symlinks
+		// if (!fileToDelete.exists()) {
+		// fileToDelete.delete();
+		// }
+		// if (fileToDelete.exists()) {
+		// SubMonitor subMon = SubMonitor.convert(monitor, 100);
+		//
+		// if (fileToDelete.isDirectory()) {
+		// File[] children = fileToDelete.listFiles();
+		// if (children != null && children.length > 0) {
+		// SubMonitor childMon = SubMonitor.convert(subMon.split(90),
+		// children.length);
+		// for (File element : children) {
+		// deleteContent(element, childMon.split(1));
+		// }
+		// }
+		// }
+		// fileToDelete.delete();
+		//
+		// subMon.done();
+		// }
 	}
 
 	public static boolean jarContainsResource(File file, String resource, boolean directory) {
